@@ -5,15 +5,18 @@ import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import ReactQueryProvider from '@/providers/ReactQueryProvider'
+import { Metadata } from 'next'
 
+// Pirate font (loaded via <link> in globals.css)
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : 'http://localhost:3000'
 
-export const metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: 'Next.js and Supabase Starter Kit',
-  description: 'The fastest way to build apps with Next.js and Supabase',
+  title: 'Adventeer | Volunteer Quests & Pirate Adventures',
+  description:
+    'Adventeer is a pirate-guild-themed volunteer platform turning community service into epic quests. Team up, level up, and give back!',
 }
 
 export default function RootLayout({
@@ -28,8 +31,15 @@ export default function RootLayout({
       style={{ colorScheme: 'dark' }}
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground">
-        <NextTopLoader showSpinner={false} height={2} color="#2acf80" />
+      <head>
+        {/* Pirate Font Link */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-[#0d1117] text-foreground">
+        <NextTopLoader showSpinner={false} height={2} color="#facc15" />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -39,8 +49,7 @@ export default function RootLayout({
           <ReactQueryProvider>
             <main className="flex min-h-screen flex-col items-center">
               {children}
-              <Analytics />{' '}
-              {/* ^^ remove this if you are not deploying to vercel. See more at https://vercel.com/docs/analytics  */}
+              <Analytics />
             </main>
             <ReactQueryDevtools initialIsOpen={false} />
           </ReactQueryProvider>
