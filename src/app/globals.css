@@ -4,56 +4,78 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    /* Light theme: Weathered parchment + ocean ink */
+    --background: 40 40% 90%;        /* parchment */
+    --foreground: 215 20% 20%;       /* dark ink */
+
+    --card: 40 40% 95%;
+    --card-foreground: 215 20% 20%;
+
+    --popover: 40 40% 95%;
+    --popover-foreground: 215 20% 20%;
+
+    --primary: 42 80% 50%;           /* gold */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 85%;        /* pale seafoam */
+    --secondary-foreground: 215 20% 20%;
+
+    --muted: 40 40% 80%;             /* faded scroll */
+    --muted-foreground: 215 15% 35%;
+
+    --accent: 195 80% 60%;           /* sky blue */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;        /* danger red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 42 20% 70%;
+    --input: 42 20% 75%;
+    --ring: 42 80% 50%;
+
     --radius: 0.3rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-  }
-}
+    /* Dark theme: Midnight seas and shadowed sails */
+    --background: 220 30% 10%;       /* dark navy */
+    --foreground: 42 85% 65%;        /* gold */
 
-@layer base {
+    --card: 220 25% 14%;
+    --card-foreground: 42 85% 65%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 42 85% 65%;
+
+    --primary: 42 85% 65%;           /* golden treasure */
+    --primary-foreground: 220 30% 10%;
+
+    --secondary: 210 30% 25%;        /* dark seafoam */
+    --secondary-foreground: 42 85% 65%;
+
+    --muted: 220 25% 18%;
+    --muted-foreground: 210 10% 50%;
+
+    --accent: 195 100% 45%;          /* ocean blue */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 25%;
+    --input: 220 20% 25%;
+    --ring: 42 85% 65%;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  .pirate-font {
+    font-family: 'Pirata One', cursive;
   }
 }
