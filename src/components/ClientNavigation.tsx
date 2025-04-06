@@ -24,7 +24,9 @@ export default function ClientNavigation() {
             Quests
           </Link>
         </div>
-        <ClientAuthButton />
+        <div className="flex items-center gap-4">
+          <ClientAuthButton />
+        </div>
       </div>
     </nav>
   )

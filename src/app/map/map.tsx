@@ -1,7 +1,7 @@
 'use client'
 
 import ClientNavigation from '@/components/ClientNavigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createNoise2D } from 'simplex-noise';
 
 function generateComplexPath(userId: string, level: number) {
@@ -25,8 +25,8 @@ function generateComplexPath(userId: string, level: number) {
   
   // Main parameters for path generation
   const baseY = 250;
-  const verticalAmplitude = 120; // Increased amplitude for more vertical movement
-  const maxCurveDepth = Math.min(40 + (level * 2), 120); // Curves get more pronounced with level
+  const verticalAmplitude = 100; // Reduced amplitude for less vertical movement
+  const maxCurveDepth = Math.min(30 + (level * 2), 80); // Reduced curve depth
 
   // Track overall progress to ensure general rightward movement
   let overallProgress = 0;
@@ -58,8 +58,8 @@ function generateComplexPath(userId: string, level: number) {
     let curveX = lastX + xMove;
     let curveY = lastY + yMove;
     
-    // Ensure y stays within screen bounds (50px from top and bottom)
-    curveY = Math.max(50, Math.min(window.innerHeight - 50, curveY));
+    // Ensure y stays within screen bounds (100px from top and bottom)
+    curveY = Math.max(100, Math.min(window.innerHeight - 100, curveY));
     
     // Occasionally add loops or curves (more frequent at higher levels)
     const curveChance = Math.min(0.15 + (level * 0.01), 0.35);
@@ -70,7 +70,7 @@ function generateComplexPath(userId: string, level: number) {
       const curveMidpointY = lastY + (noiseY + noise2D(i * 0.3, seed * 0.2)) * curveIntensity;
       
       // Ensure midpoint stays within screen bounds
-      const boundedMidpointY = Math.max(50, Math.min(window.innerHeight - 50, curveMidpointY));
+      const boundedMidpointY = Math.max(100, Math.min(window.innerHeight - 100, curveMidpointY));
       
       // Add midpoint to create curve
       points.push({ x: curveMidpointX, y: boundedMidpointY });
@@ -86,16 +86,30 @@ function generateComplexPath(userId: string, level: number) {
   }
   
   // Ensure final point is proportional to level and within bounds
-  const finalY = Math.max(50, Math.min(window.innerHeight - 50, baseY + (noise2D(1, seed) * 40)));
+  const finalY = Math.max(100, Math.min(window.innerHeight - 100, baseY + (noise2D(1, seed) * 40)));
   points.push({ x: startX + totalWidth, y: finalY });
   
   return points;
 }
 
 export default function MapPage({ userId, level }: { userId: string; level: number }) {
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const points = generateComplexPath(userId, Math.max(1, level));
   const mapWidth = points.reduce((max, p) => Math.max(max, p.x), 0) + 100;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Calculate current position based on level progress
   useEffect(() => {
@@ -112,7 +126,7 @@ export default function MapPage({ userId, level }: { userId: string; level: numb
         });
       }, 100);
     }
-  }, [level, points]);
+  }, [level, points, windowSize]);
 
   // Determine milestones (one every 5 levels)
   const milestones = [];
@@ -136,9 +150,6 @@ export default function MapPage({ userId, level }: { userId: string; level: numb
       <div className="fixed top-0 left-0 w-full z-20 text-black">
         <ClientNavigation />
       </div>
-      
-      {/* Rest of the map content */}
-      <div className="absolute inset-0 bg-[url('/parchment-tile.png')] bg-repeat opacity-20" />
       
       {/* Map Container */}
       <div 
