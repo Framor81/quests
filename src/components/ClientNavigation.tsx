@@ -1,21 +1,9 @@
-import { createServerClient } from '@/utils/supabase'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
-import AuthButton from './AuthButton'
+"use client";
 
-export default async function Navigation() {
-  const cookieStore = cookies()
-  const canInitSupabaseClient = () => {
-    try {
-      createServerClient(cookieStore)
-      return true
-    } catch (e) {
-      return false
-    }
-  }
+import Link from 'next/link';
+import ClientAuthButton from './ClientAuthButton';
 
-  const isSupabaseConnected = canInitSupabaseClient()
-
+export default function ClientNavigation() {
   return (
     <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
       <div className="flex w-full max-w-4xl items-center justify-between p-3 text-sm">
@@ -36,8 +24,10 @@ export default async function Navigation() {
             Quests
           </Link>
         </div>
-        {isSupabaseConnected && <AuthButton />}
+        <div className="flex items-center gap-4">
+          <ClientAuthButton />
+        </div>
       </div>
     </nav>
   )
-}
+} 

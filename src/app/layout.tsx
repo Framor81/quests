@@ -1,11 +1,11 @@
-import { GeistSans } from 'geist/font/sans'
-import ThemeProvider from '@/providers/ThemeProvider'
-import NextTopLoader from 'nextjs-toploader'
-import { Analytics } from '@vercel/analytics/react'
-import './globals.css'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import ReactQueryProvider from '@/providers/ReactQueryProvider'
+import ThemeProvider from '@/providers/ThemeProvider'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Analytics } from '@vercel/analytics/react'
+import { GeistSans } from 'geist/font/sans'
 import { Metadata } from 'next'
+import NextTopLoader from 'nextjs-toploader'
+import './globals.css'
 
 // Pirate font (loaded via <link> in globals.css)
 const defaultUrl = process.env.VERCEL_URL
@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: 'Adventeer | Volunteer Quests & Pirate Adventures',
   description:
     'Adventeer is a pirate-guild-themed volunteer platform turning community service into epic quests. Team up, level up, and give back!',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+  },
 }
 
 export default function RootLayout({
@@ -32,6 +37,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         {/* Pirate Font Link */}
         <link
           href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap"

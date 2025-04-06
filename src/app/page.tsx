@@ -1,7 +1,7 @@
 import Navigation from '@/components/Navigation'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@/utils/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
+import { createServerClient } from '@/utils/supabase'
+import { cookies } from 'next/headers'
 
 export default async function Index() {
   const cookieStore = cookies()
