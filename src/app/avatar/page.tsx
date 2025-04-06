@@ -2,8 +2,9 @@
 
 import ClientNavigation from '@/components/ClientNavigation';
 import ThemeToggle from '@/components/ThemeToggle';
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from '@/utils/supabase';
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Avatar {
@@ -13,10 +14,12 @@ interface Avatar {
   skin_tone: string;
   eye_style: string;
   eye_color: string;
+  avatar_url: string | null;
 }
 
 export default function AvatarPage() {
-  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const supabase = createBrowserClient();
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -37,46 +40,112 @@ export default function AvatarPage() {
   const [eyeColorIndex, setEyeColorIndex] = useState(0);
 
   useEffect(() => {
-    const fetchAvatar = async () => {
+    const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setLoading(false);
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error("User error:", userError);
+          setError("Authentication error. Please try logging in again.");
+          router.push('/login');
           return;
         }
 
-        const { data, error } = await supabase
+        if (!user) {
+          console.log("No user found");
+          router.push('/login');
+          return;
+        }
+
+        // Fetch avatar data
+        const { data: avatarData, error: avatarError } = await supabase
           .from("avatars")
           .select("*")
           .eq("user_id", user.id)
           .single();
 
-        if (error) {
-          console.error("Error fetching avatar:", error);
+        if (avatarError && avatarError.code !== 'PGRST116') { // Not found error
+          console.error("Error fetching avatar:", avatarError);
           setError("Failed to load your avatar");
-        } else if (data) {
-          setAvatar(data as Avatar);
+        } else if (avatarData) {
+          setAvatar(avatarData as Avatar);
         }
-      } catch (error) {
-        console.error("Error:", error);
-        setError("An unexpected error occurred");
-      } finally {
+
         setLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setError("Failed to check authentication status");
+        router.push('/login');
       }
     };
-    fetchAvatar();
-  }, [supabase]);
+
+    checkAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        router.push('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, router]);
 
   const handleCreate = async () => {
     try {
       setError(null);
       setSuccess(null);
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
         setError("You must be logged in to create an avatar");
+        router.push('/login');
         return;
       }
+
+      // Create a unique filename for the avatar
+      const timestamp = new Date().getTime();
+      const filename = `avatar_${user.id}_${timestamp}.svg`;
+
+      // Create the SVG content for the avatar
+      const svgContent = `
+        <svg width="200" height="300" xmlns="http://www.w3.org/2000/svg">
+          <image href="/avatars/base/${skinTones[skinToneIndex]}.svg" width="200" height="300"/>
+          <image href="/avatars/eyes/${eyeStyles[eyeStyleIndex]}_${eyeColors[eyeColorIndex]}.svg" width="200" height="300"/>
+          <image href="/avatars/hair/${hairStyles[hairStyleIndex]}_${hairColors[hairColorIndex]}.svg" width="200" height="300"/>
+        </svg>
+      `;
+
+      // Convert SVG to Blob
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const file = new File([blob], filename, { type: 'image/svg+xml' });
+
+      // Try to upload using a different method
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(filename, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: 'image/svg+xml'
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        // Try to list buckets to debug
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        console.log("Available buckets:", buckets);
+        console.log("Buckets error:", bucketsError);
+        throw new Error(`Failed to upload avatar: ${uploadError.message}`);
+      }
+
+      // Get the public URL of the uploaded avatar
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filename);
 
       const newAvatar: Avatar = {
         user_id: user.id,
@@ -85,14 +154,20 @@ export default function AvatarPage() {
         skin_tone: skinTones[skinToneIndex],
         eye_style: eyeStyles[eyeStyleIndex],
         eye_color: eyeColors[eyeColorIndex],
+        avatar_url: publicUrl
       };
 
       // First check if an avatar already exists
-      const { data: existingAvatar } = await supabase
+      const { data: existingAvatar, error: fetchError } = await supabase
         .from("avatars")
         .select("*")
         .eq("user_id", user.id)
         .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // Not found error
+        console.error("Error fetching existing avatar:", fetchError);
+        throw new Error("Failed to check for existing avatar");
+      }
 
       let result;
       if (existingAvatar) {
@@ -109,7 +184,8 @@ export default function AvatarPage() {
       }
 
       if (result.error) {
-        throw result.error;
+        console.error("Database error:", result.error);
+        throw new Error(`Failed to save avatar: ${result.error.message}`);
       }
 
       setAvatar(newAvatar);
@@ -120,7 +196,7 @@ export default function AvatarPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Error saving avatar:", error);
-      setError("Failed to save your avatar. Please try again.");
+      setError(error instanceof Error ? error.message : "Failed to save your avatar. Please try again.");
     }
   };
 
@@ -153,6 +229,16 @@ export default function AvatarPage() {
     return (
       <div className="relative flex min-h-screen w-full flex-col items-center justify-between bg-gradient-to-b from-brown to-blue-300 text-black">
         <ClientNavigation />
+
+        {/* Delete Avatar Button */}
+        {avatar && (
+          <button
+            onClick={handleDelete}
+            className="absolute top-20 right-4 px-4 py-2 bg-destructive/80 backdrop-blur-sm text-destructive-foreground rounded-lg hover:bg-accent transition-colors z-10"
+          >
+            Delete Avatar
+          </button>
+        )}
 
         <main className="relative flex flex-1 flex-col items-center justify-center px-4 text-center z-10">
           <h1 className="pirate-font text-6xl font-extrabold text-darkbrown drop-shadow-lg mb-8">
@@ -289,19 +375,22 @@ export default function AvatarPage() {
     <div className="relative flex min-h-screen w-full flex-col items-center justify-between bg-gradient-to-b from-brown to-blue-300 text-black">
       <ClientNavigation />
 
+      {/* Delete Avatar Button */}
+      {avatar && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-20 right-4 px-4 py-2 bg-destructive/80 backdrop-blur-sm text-destructive-foreground rounded-lg hover:bg-accent transition-colors z-10"
+        >
+          Delete Avatar
+        </button>
+      )}
+
       <main className="relative flex flex-1 flex-col items-center justify-center px-4 text-center z-10">
         <h1 className="pirate-font text-6xl font-extrabold text-darkbrown drop-shadow-lg mb-8">
           Your Pirate Avatar
         </h1>
 
         <div className="relative w-full max-w-2xl">
-          <button
-            onClick={handleDelete}
-            className="absolute top-0 right-0 px-4 py-2 bg-destructive/80 backdrop-blur-sm text-destructive-foreground rounded-lg hover:bg-accent transition-colors"
-          >
-            Delete Avatar
-          </button>
-
           <div className="relative w-[200px] h-[300px] mx-auto bg-card/80 backdrop-blur-sm rounded-lg p-4">
             <Image src={`/avatars/base/${avatar.skin_tone}.svg`} alt="base" fill className="absolute" />
             <Image src={`/avatars/eyes/${avatar.eye_style}_${avatar.eye_color}.svg`} alt="eyes" fill className="absolute" />
@@ -375,3 +464,4 @@ export default function AvatarPage() {
     </div>
   );
 }
+
