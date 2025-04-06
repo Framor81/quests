@@ -23,11 +23,11 @@ export default async function Navigation() {
           <Link href="/" className="hover:underline">
             Home
           </Link>
-          <Link href="/about" className="hover:underline">
-            About
+          <Link href="/profile" className="hover:underline">
+            Profile
           </Link>
-          <Link href="/contact" className="hover:underline">
-            Contact
+          <Link href="/map" className="hover:underline">
+            Map
           </Link>
           <Link href="/create" className="hover:underline">
             Create Quest
