@@ -32,6 +32,9 @@ export default async function Navigation() {
           <Link href="/create" className="hover:underline">
             Create Quest
           </Link>
+          <Link href="/bulletin" className="hover:underline">
+            Quests
+          </Link>
         </div>
         {isSupabaseConnected && <AuthButton />}
       </div>
