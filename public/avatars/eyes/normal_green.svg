@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="300" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left Eye -->
+  <ellipse cx="70" cy="90" rx="15" ry="10" fill="#90EE90"/>
+  <circle cx="70" cy="90" r="5" fill="#000"/>
+  <!-- Right Eye -->
+  <ellipse cx="130" cy="90" rx="15" ry="10" fill="#90EE90"/>
+  <circle cx="130" cy="90" r="5" fill="#000"/>
+</svg> 

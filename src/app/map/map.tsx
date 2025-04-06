@@ -1,5 +1,6 @@
 'use client'
 
+import ClientNavigation from '@/components/ClientNavigation';
 import { useEffect, useRef } from 'react';
 import { createNoise2D } from 'simplex-noise';
 
@@ -92,8 +93,8 @@ function generateComplexPath(userId: string, level: number) {
 }
 
 export default function MapPage({ userId, level }: { userId: string; level: number }) {
-  const points = generateComplexPath(userId, Math.max(1, level)); // Ensure minimum level 1
-  const mapWidth = points.reduce((max, p) => Math.max(max, p.x), 0) + 100; // Add padding
+  const points = generateComplexPath(userId, Math.max(1, level));
+  const mapWidth = points.reduce((max, p) => Math.max(max, p.x), 0) + 100;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Calculate current position based on level progress
@@ -127,111 +128,118 @@ export default function MapPage({ userId, level }: { userId: string; level: numb
   }
 
   return (
-    <div 
-      ref={scrollRef}
-      className="relative w-screen h-screen overflow-x-auto overflow-y-hidden bg-[url('/parchment-tile.png')] bg-repeat bg-center bg-[#F5E6D3]"
-    >
-      <div 
-        className="absolute inset-0 bg-[#F5E6D3]/20 backdrop-blur-sm"
-        style={{ width: `${mapWidth}px`, minWidth: '100vw' }}
-      />
+    <div className="relative flex min-h-screen w-full flex-col">
+      {/* Background Container */}
+      <div className="fixed inset-0 w-screen h-screen bg-[url('/parchment-tile.png')] bg-repeat bg-center bg-[#F5E6D3] z-0" />
+
+      {/* Navigation Banner */}
+      <div className="fixed top-0 left-0 w-full z-20 text-black">
+        <ClientNavigation />
+      </div>
       
+      {/* Rest of the map content */}
+      <div className="absolute inset-0 bg-[url('/parchment-tile.png')] bg-repeat opacity-20" />
+      
+      {/* Map Container */}
       <div 
-        className="relative h-full" 
-        style={{ width: `${mapWidth}px`, minWidth: '100vw' }}
+        ref={scrollRef}
+        className="relative w-screen h-[calc(100vh-4rem)] overflow-x-auto overflow-y-hidden mt-16"
       >
-        <svg width={mapWidth} height="100%">
-          {/* Path background for glow effect */}
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          
-          {/* Main Path */}
-          <path
-            d={`M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`}
-            fill="none"
-            stroke="#e11d48" // Red color
-            strokeWidth={4}
-            strokeDasharray="8,4"
-            filter="url(#glow)"
-          />
-          
-          {/* Draw journey points every few segments */}
-          {points.filter((_, idx) => idx % 15 === 0 || idx === points.length - 1).map((point, idx) => {
-            const pointLevel = Math.floor(idx * level / (points.length / 15));
-            const isCompleted = pointLevel <= level;
-            const isCurrent = pointLevel === level;
-            return (
-              <g key={idx}>
+        <div 
+          className="absolute inset-0 bg-[#F5E6D3]/20 backdrop-blur-sm"
+          style={{ width: `${mapWidth}px`, minWidth: '100vw' }}
+        />
+        
+        <div 
+          className="relative h-full" 
+          style={{ width: `${mapWidth}px`, minWidth: '100vw' }}
+        >
+          <svg width={mapWidth} height="100%">
+            {/* Path background for glow effect */}
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            
+            {/* Main Path */}
+            <path
+              d={`M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`}
+              fill="none"
+              stroke="#e11d48" // Red color
+              strokeWidth={4}
+              strokeDasharray="8,4"
+              filter="url(#glow)"
+            />
+            
+            {/* Draw journey points every few segments */}
+            {points.filter((_, idx) => idx % 15 === 0 || idx === points.length - 1).map((point, idx) => {
+              const pointLevel = Math.floor(idx * level / (points.length / 15));
+              const isCompleted = pointLevel <= level;
+              const isCurrent = pointLevel === level;
+              return (
+                <g key={idx}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={isCurrent ? "12" : "8"}
+                    fill={isCurrent ? '#16A34A' : isCompleted ? '#FBBF24' : '#94a3b8'}
+                    stroke="#742a2a"
+                    strokeWidth="2"
+                    className="drop-shadow-lg"
+                  />
+                </g>
+              );
+            })}
+            
+            {/* Milestone markers */}
+            {milestones.map((milestone) => (
+              <g key={`milestone-${milestone.level}`}>
                 <circle
-                  cx={point.x}
-                  cy={point.y}
-                  r={isCurrent ? "12" : "8"}
-                  fill={isCurrent ? '#16A34A' : isCompleted ? '#FBBF24' : '#94a3b8'}
+                  cx={milestone.point.x}
+                  cy={milestone.point.y}
+                  r="18"
+                  fill={milestone.unlocked ? '#f97316' : '#94a3b8'}
                   stroke="#742a2a"
-                  strokeWidth="2"
-                  className="drop-shadow-lg"
+                  strokeWidth="3"
+                  className="drop-shadow-xl"
                 />
+                <text
+                  x={milestone.point.x}
+                  y={milestone.point.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#fff"
+                  fontWeight="bold"
+                  fontSize="12"
+                >
+                  {milestone.level}
+                </text>
+                {milestone.unlocked && (
+                  <path
+                    d={`M ${milestone.point.x - 5},${milestone.point.y} L ${milestone.point.x + 1},${milestone.point.y + 5} L ${milestone.point.x + 7},${milestone.point.y - 5}`}
+                    stroke="#fff"
+                    strokeWidth="2"
+                    fill="none"
+                  />
+                )}
               </g>
-            );
-          })}
+            ))}
+          </svg>
           
-          {/* Milestone markers */}
-          {milestones.map((milestone) => (
-            <g key={`milestone-${milestone.level}`}>
-              <circle
-                cx={milestone.point.x}
-                cy={milestone.point.y}
-                r="18"
-                fill={milestone.unlocked ? '#f97316' : '#94a3b8'}
-                stroke="#742a2a"
-                strokeWidth="3"
-                className="drop-shadow-xl"
-              />
-              <text
-                x={milestone.point.x}
-                y={milestone.point.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="#fff"
-                fontWeight="bold"
-                fontSize="12"
-              >
-                {milestone.level}
-              </text>
-              {milestone.unlocked && (
-                <path
-                  d={`M ${milestone.point.x - 5},${milestone.point.y} L ${milestone.point.x + 1},${milestone.point.y + 5} L ${milestone.point.x + 7},${milestone.point.y - 5}`}
-                  stroke="#fff"
-                  strokeWidth="2"
-                  fill="none"
-                />
-              )}
-            </g>
-          ))}
-        </svg>
-        
-        {/* Map Title */}
-        <div className="absolute top-4 left-4 text-3xl font-bold text-[#742a2a] drop-shadow-lg font-serif">
-          🗺️ Your Treasure Trail
+          {/* Map Title */}
+          <div className="absolute top-4 left-4 text-3xl font-bold text-[#742a2a] drop-shadow-lg font-serif">
+            🗺️ Your Treasure Trail
+          </div>
+          
+          {/* User Info Badge */}
+          <div className="fixed top-20 right-4 bg-amber-100/80 border-2 border-amber-700 rounded-lg p-3 shadow-lg">
+            <div className="text-amber-900 font-bold">Explorer Level: {level}</div>
+            <div className="text-amber-800 text-sm">Points to next level: {(level + 1) * (level + 1) * 5 - (level * level * 5)}</div>
+          </div>
         </div>
-        
-        {/* User Info Badge */}
-        <div className="fixed top-4 right-4 bg-amber-100/80 border-2 border-amber-700 rounded-lg p-3 shadow-lg">
-          <div className="text-amber-900 font-bold">Explorer Level: {level}</div>
-          <div className="text-amber-800 text-sm">Points to next level: {(level + 1) * (level + 1) * 5 - (level * level * 5)}</div>
-        </div>
-        
-        {/* Debug Information
-        <div className="absolute bottom-4 left-4 text-sm text-[#742a2a]/80 font-serif italic">
-          <p>User ID: {userId.substring(0, 8)}...</p>
-          <p>Current Level: {level}</p>
-          <p>Map Width: {mapWidth}px</p>
-        </div> */}
       </div>
     </div>
   );
